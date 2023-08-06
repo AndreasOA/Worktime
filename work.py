@@ -122,9 +122,9 @@ if check_password():
     # Speical Occasion section of UI
     st.subheader('Tick Box if Special Occasion')
     col1, col2, col3 = st.columns(3)
-    za_day = col1.checkbox('Zeitausgleich')
+    za_day = col1.checkbox('Time Compensation')
     sick_leave = col2.checkbox('Sick Leave')
-    vacation_day = col3.checkbox('Urlaub')
+    vacation_day = col3.checkbox('Vacation')
     disable_time = za_day or sick_leave or vacation_day
     #-------------------------------------------------------------------------------------------------
     # Work Location section of UI
