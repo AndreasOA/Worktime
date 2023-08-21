@@ -190,8 +190,8 @@ if check_password():
                             (datetime.datetime.combine(datetime.date.today(), inoff_end) -
                             datetime.datetime.combine(datetime.date.today(), inoff_break_end))
             else:
-                inoff_detailed_worked_time += f'{inoff_start.strftime("%H:%M")} - {inoff_end.strftime("%H:%M")}'
-                inoff_worked_time += datetime.datetime.combine(datetime.date.today(), inoff_end) - datetime.datetime.combine(datetime.date.today(), inoff_start)
+                inoff_detailed_worked_time = f'{inoff_start.strftime("%H:%M")} - {inoff_end.strftime("%H:%M")}'
+                inoff_worked_time = datetime.datetime.combine(datetime.date.today(), inoff_end) - datetime.datetime.combine(datetime.date.today(), inoff_start)
         else:
             inoff_detailed_worked_time = ' '
             inoff_worked_time = worked_time     
