@@ -121,6 +121,7 @@ table_content = readNotionDb(notion_token, notion_db_id)
 sum_za = 0
 break_day = False
 inoff_wtime = False
+inoff_break_day = False
 work_type = 'NA'
 #-------------------------------------------------------------------------------------------------
 # Get ZA sum from Notion Db and create UI
@@ -136,11 +137,11 @@ if check_password():
     #-------------------------------------------------------------------------------------------------
     # Speical Occasion section of UI
     st.subheader('Tick Box if Special Occasion')
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3= st.columns(3)
     za_day = col1.checkbox('Time Compensation')
     sick_leave = col2.checkbox('Sick Leave')
     vacation_day = col3.checkbox('Vacation')
-    holiday = col3.checkbox('holiday (Feiertag)')
+    holiday = col1.checkbox('holiday (Feiertag)')
     disable_time = za_day or sick_leave or vacation_day or holiday
     #-------------------------------------------------------------------------------------------------
     # Work Location section of UI
@@ -164,7 +165,7 @@ if check_password():
     if inoff_wtime:
         inoff_start = st.time_input('Inofficial Worktime start', step=300, value=datetime.time(8, 0), disabled=disable_time)
         inoff_end = st.time_input('Inofficial Worktime end', step=300, value=datetime.time(16, 45), disabled=disable_time)
-        inoff_break_day = st.checkbox('Break', disabled=disable_time)
+        inoff_break_day = st.checkbox('Inoff Break', disabled=disable_time)
         if inoff_break_day:
             inoff_break_start = st.time_input('Break start', step=300, value=datetime.time(12, 0), disabled=disable_time)
             inoff_break_end = st.time_input('Break end', step=300, value=datetime.time(12, 45), disabled=disable_time)
