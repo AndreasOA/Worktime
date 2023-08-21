@@ -4,7 +4,7 @@ import requests
 import json
 import time
 
-def createDbElement(token: str, databaseId: str, enum: str, work_date: str, detailed_work_time: str, worked_time: str, work_type: str) -> str:
+def createDbElement(token: str, databaseId: str, enum: str, work_date: str, detailed_work_time: str, worked_time: str, inoff_detailed_work_time:str, inoff_worked_time:str, work_type: str) -> str:
     updateData = {
         "parent": {
             "database_id": databaseId
@@ -43,6 +43,20 @@ def createDbElement(token: str, databaseId: str, enum: str, work_date: str, deta
             "Worked Time": {
                 "type": "number",
                 "number": worked_time
+            },
+            "Inoff Time": {
+                "rich_text": [
+                    {
+                        "type": "text",
+                        "text": {
+                            "content": inoff_detailed_work_time
+                        }
+                    }
+                ]
+            },
+            "Inoff Worked": {
+                "type": "number",
+                "number": inoff_worked_time
             }
         }
     }
@@ -106,6 +120,7 @@ notion_db_id = st.secrets['notion_db']["notion_db_id"]
 table_content = readNotionDb(notion_token, notion_db_id)
 sum_za = 0
 break_day = False
+inoff_wtime = False
 work_type = 'NA'
 #-------------------------------------------------------------------------------------------------
 # Get ZA sum from Notion Db and create UI
@@ -121,11 +136,12 @@ if check_password():
     #-------------------------------------------------------------------------------------------------
     # Speical Occasion section of UI
     st.subheader('Tick Box if Special Occasion')
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     za_day = col1.checkbox('Time Compensation')
     sick_leave = col2.checkbox('Sick Leave')
     vacation_day = col3.checkbox('Vacation')
-    disable_time = za_day or sick_leave or vacation_day
+    holiday = col3.checkbox('holiday (Feiertag)')
+    disable_time = za_day or sick_leave or vacation_day or holiday
     #-------------------------------------------------------------------------------------------------
     # Work Location section of UI
     st.divider()
@@ -139,11 +155,20 @@ if check_password():
     start_time = st.time_input('Start time', step=300, value=datetime.time(8, 0), disabled=disable_time)
     end_time = st.time_input('End time', step=300, value=datetime.time(16, 45), disabled=disable_time)
     st.divider()
-    break_day = st.checkbox('Made a break?', disabled=disable_time)
+    break_day = st.checkbox('Break', disabled=disable_time)
     if break_day:
         break_start = st.time_input('Break start', step=300, value=datetime.time(12, 0), disabled=disable_time)
         break_end = st.time_input('Break end', step=300, value=datetime.time(12, 45), disabled=disable_time)
     st.divider()
+    inoff_wtime = st.checkbox('Inofficial Worktime', disabled=disable_time)
+    if inoff_wtime:
+        inoff_start = st.time_input('Inofficial Worktime start', step=300, value=datetime.time(8, 0), disabled=disable_time)
+        inoff_end = st.time_input('Inofficial Worktime end', step=300, value=datetime.time(16, 45), disabled=disable_time)
+        inoff_break_day = st.checkbox('Break', disabled=disable_time)
+        if inoff_break_day:
+            inoff_break_start = st.time_input('Break start', step=300, value=datetime.time(12, 0), disabled=disable_time)
+            inoff_break_end = st.time_input('Break end', step=300, value=datetime.time(12, 45), disabled=disable_time)
+    
     #-------------------------------------------------------------------------------------------------
     # Calculate worked time and create detailed worked time string
     if not disable_time:
@@ -155,10 +180,23 @@ if check_password():
                         datetime.datetime.combine(datetime.date.today(), break_end))
         else:
             detailed_worked_time = f'{start_time.strftime("%H:%M")} - {end_time.strftime("%H:%M")}'
-            worked_time = datetime.datetime.combine(datetime.date.today(), end_time) - datetime.datetime.combine(datetime.date.today(), start_time)             
+            worked_time = datetime.datetime.combine(datetime.date.today(), end_time) - datetime.datetime.combine(datetime.date.today(), start_time)
+        if inoff_wtime:
+            if inoff_break_day:
+                inoff_detailed_worked_time += f' | {inoff_start.strftime("%H:%M")} - {inoff_break_start.strftime("%H:%M")} | {inoff_break_end.strftime("%H:%M")} - {inoff_end.strftime("%H:%M")}'
+                inoff_worked_time += (datetime.datetime.combine(datetime.date.today(), inoff_break_start) -
+                            datetime.datetime.combine(datetime.date.today(), inoff_start)) + \
+                            (datetime.datetime.combine(datetime.date.today(), inoff_end) -
+                            datetime.datetime.combine(datetime.date.today(), inoff_break_end))
+            else:
+                inoff_detailed_worked_time += f' | {inoff_start.strftime("%H:%M")} - {inoff_end.strftime("%H:%M")}'
+                inoff_worked_time += datetime.datetime.combine(datetime.date.today(), inoff_end) - datetime.datetime.combine(datetime.date.today(), inoff_start)
+        else:
+            inoff_detailed_worked_time = ' '
+            inoff_worked_time = worked_time     
     else:
         detailed_worked_time = ' '
-
+        inoff_detailed_worked_time = ' '
     #-------------------------------------------------------------------------------------------------
     # Prepare data for Notion Db upload
     if not disable_time:
@@ -166,13 +204,17 @@ if check_password():
     if st.button('Submit to Notion'):
         if za_day:
             worked_time = datetime.date.today() - datetime.date.today()
+            inoff_worked_time = datetime.date.today() - datetime.date.today()
             work_type = 'ZA'
         elif sick_leave or vacation_day:
             worked_time = datetime.time(4, 0)
+            detailed_work_time = 'Event, check Type'
             if sick_leave:
                 work_type = 'SL'
             elif vacation_day:
                 work_type = 'TU'
+            elif holiday:
+                work_type = 'FE'
         else:
             if ho_work:
                 work_type = 'HO'
@@ -183,6 +225,8 @@ if check_password():
                         work_date=str(sel_date), 
                         detailed_work_time=detailed_worked_time,
                         worked_time=round(worked_time.seconds / 3600, 2),
+                        inoff_detailed_work_time=inoff_detailed_worked_time,
+                        inoff_worked_time=round(inoff_worked_time.seconds / 3600, 2),
                         work_type=work_type)
         if ret['object'] == 'page':
             st.caption(f'Notion Entry created: {ret["url"]}')
