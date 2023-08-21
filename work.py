@@ -184,13 +184,13 @@ if check_password():
             worked_time = datetime.datetime.combine(datetime.date.today(), end_time) - datetime.datetime.combine(datetime.date.today(), start_time)
         if inoff_wtime:
             if inoff_break_day:
-                inoff_detailed_worked_time += f' | {inoff_start.strftime("%H:%M")} - {inoff_break_start.strftime("%H:%M")} | {inoff_break_end.strftime("%H:%M")} - {inoff_end.strftime("%H:%M")}'
-                inoff_worked_time += (datetime.datetime.combine(datetime.date.today(), inoff_break_start) -
+                inoff_detailed_worked_time = f'{inoff_start.strftime("%H:%M")} - {inoff_break_start.strftime("%H:%M")} | {inoff_break_end.strftime("%H:%M")} - {inoff_end.strftime("%H:%M")}'
+                inoff_worked_time = (datetime.datetime.combine(datetime.date.today(), inoff_break_start) -
                             datetime.datetime.combine(datetime.date.today(), inoff_start)) + \
                             (datetime.datetime.combine(datetime.date.today(), inoff_end) -
                             datetime.datetime.combine(datetime.date.today(), inoff_break_end))
             else:
-                inoff_detailed_worked_time += f' | {inoff_start.strftime("%H:%M")} - {inoff_end.strftime("%H:%M")}'
+                inoff_detailed_worked_time += f'{inoff_start.strftime("%H:%M")} - {inoff_end.strftime("%H:%M")}'
                 inoff_worked_time += datetime.datetime.combine(datetime.date.today(), inoff_end) - datetime.datetime.combine(datetime.date.today(), inoff_start)
         else:
             inoff_detailed_worked_time = ' '
@@ -200,6 +200,7 @@ if check_password():
         inoff_detailed_worked_time = ' '
     #-------------------------------------------------------------------------------------------------
     # Prepare data for Notion Db upload
+    st.divider()
     if not disable_time:
         st.write(f'Worked Time: {worked_time}')
     if st.button('Submit to Notion'):
